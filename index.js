@@ -116,102 +116,94 @@ async function requestTodosSintomas() {
 }
 
 async function Diagnostico(sintomas, dataNascimento, genero) {
-
-    let sintomasArraySerializada = JSON.parse(sintomas)
-    console.log(sintomasArraySerializada,dataNascimento,genero)
-    console.log(typeof(sintomasArraySerializada))
     const token = await login()
+
+    let sintomasconvertido = [];
+
     try {
-        const response = await axios.get(process.env.HEALTHURI+`/diagnosis?token=${token}&symptoms=${sintomasArraySerializada}&gender${genero}&year_of_birth=${dataNascimento}&language=en-gb`);
-        console.log(response)
+        sintomasconvertido = JSON.stringify(sintomas);
+
+        console.log(sintomasconvertido)
+        console.log(typeof(sintomasconvertido))
+        console.log(genero)
+        const response = await axios.get(process.env.HEALTHURI+`/diagnosis?token=${token}&symptoms=${sintomasconvertido}&gender=${genero}&year_of_birth=${dataNascimento}&language=en-gb`);
         if (response.status === 200) {
-            console.log(response)
             return response.data
         }
-    }
-    catch {
-        (err)=>{console.log(err);}
+
+    } catch (err) {
+        console.log(err);
     }
 }
 
 app.get('/',async (request, response)=>{
-    /*let doencas = await requestDoencas();
+    let doencas = await requestTodosSintomas();
     let doencasTraduzidas = [];
     
          let res = doencas.map(async item=>{
         
             doencatraduzida = await traduzirDoenca(item.Name)
             console.log(doencatraduzida)
-            doencasTraduzidas.push(doencatraduzida)
+            doencasTraduzidas.push({ID: item.ID, Name: doencatraduzida})
         })
  
         Promise.all(res).then(
         ()=>{
             return response.json({data: doencasTraduzidas});
         }
-    )*/
-    return response.json({data: 'server is up'});
+    )
+    //return response.json({data: 'server is up'});
 
     
 })
 
-
 app.post('/', async function (req, res) {
-    let issuesidArray = [];
-    let problemas = req.query.issues;
+    let issuesidArray = JSON.parse(req.query.issues);
     let dataNascimento = parseInt(req.query.anoNascimento, 10);
     let genero = req.query.genero;
-    let issues = problemas.split(',');
-    let problemastraduzidosparaingles = [];
+    //let issues = problemas.split(',');
+    //let problemastraduzidosparaingles = [];
 
-    console.log(typeof(dataNascimento))
-    console.log(dataNascimento)
-    let todosSintomas = await requestTodosSintomas()
-
-    let response = issues.map(async (item)=>{
-        let res = await traduzirparaIngles(item)
-        console.log(res);
-
-        problemastraduzidosparaingles.push(res[0].toUpperCase() + res.substr(1));
-    })
-
-    Promise.all(response).then(()=>{
-        console.log(problemastraduzidosparaingles)
-        
-        let response = problemastraduzidosparaingles.map((doenca)=>{
-            todosSintomas.map((item)=>{
-                console.log(item)
-                if(item.Name == doenca){
-                    issuesidArray.push(item.ID)
-                    console.log("achou")
-                    return
-                }
-            })
+    try{
+        const response = await Diagnostico(issuesidArray, dataNascimento, genero)
+        console.log(response)
+        const resposta = []
+        const result = response.map(async item=>{
+            let nometraduzido = ''
+            let icdNameTraduzido = ''
+            let ProfNameTraduzido = ''
+            nometraduzido = await traduzirDoenca(item.Issue.Name)
+            icdNameTraduzido = await traduzirDoenca(item.Issue.IcdName)
+            ProfNameTraduzido = await traduzirDoenca(item.Issue.ProfName)
+         
+             resposta.push(
+                {
+                Problema:{
+                    ID: item.Issue.ID,
+                    Name: nometraduzido,
+                    IndiceAcerto: item.Issue.Accuracy,
+                    Icd: item.Issue.Icd,
+                    IcdName: icdNameTraduzido,
+                    ProfName: ProfNameTraduzido,
+                    Ranking: item.Issue.Ranking
+                    },
+                Especializacao: item.Specialisation
+            }
+        )
         })
 
-        Promise.all(response).then(async ()=>{
-            console.log(issuesidArray);
-
-            try {
-                let response = await Diagnostico(JSON.stringify(issuesidArray), dataNascimento, genero)
-                if (response.status === 200) {
-                    console.log(response)
-                    return response.data
-                }
-                console.log(response)
-            }
-            catch {
-                (err)=>{console.log(err);}
-            }
+        Promise.all(result).then(()=>{
+            console.log(resposta)
+            res.send({data: resposta});
+            //return response.json({data: resposta});
+        })
+    }
+    catch{
+        (err)=>{
+            console.log(err)
+        }
+    }
     
-
-
-        })
-
-    })
-    //let doencas = await requestDoencasReal();
-   // console.log(doencas)
-    res.send('Got a POST request');
 });
 
 app.listen(3000);
