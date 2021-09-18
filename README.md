@@ -40,19 +40,6 @@ Insira os tópicos do README em links para facilitar a navegação do leitor
 
 :heavy_check_mark: Gerar diagnóstico
 
-## Resolvendo Problemas :exclamation:
-
-Em [issues]() foram abertos alguns problemas gerados durante o desenvolvimento desse projeto e como foram resolvidos. 
-
-## Tarefas em aberto
-
-Se for o caso, liste tarefas/funcionalidades que ainda precisam ser implementadas na sua aplicação
-
-:memo: Finalizar sistema de login
-
-:memo: Finalizar sistema de pagamento
-
-:memo: Inserir aulas e textos persolalizados
 
 
 ## Pré-requisitos
